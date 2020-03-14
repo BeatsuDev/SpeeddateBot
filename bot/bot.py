@@ -21,6 +21,12 @@ class SpeedDater(commands.Bot):
         return commands.when_mentioned_or(prefix)
 
 
-
     async def on_ready(self):
-        print(f"Connected to {len(self.bot.users)} users from {len(self.bot.guilds)} guilds\n\n------------")
+        print(  f"Connected to {len(self.bot.users)} users",
+                f"from {len(self.bot.guilds)} guilds\n\n------------")
+
+        print('Loading cogs')
+        for file in os.listdir( os.path.join(os.getcwd(),'bot','cogs') ):
+            if file.endswith('.py'):
+                print(f'Loading: bot.cogs.{file}')
+                self.load_extension(f'bot.cogs.{file}')
