@@ -61,15 +61,47 @@ class Rotation(commands.Cog):
 
     @commands.command()
     async def signup(self, ctx):
-        embed = discord.Embed()
+        embed=discord.Embed(
+            title="Bli med i Kattas speed date!",
+            description=(
+                "De siste dagene kan ha virket helt surrealistisk og nå har vi mye tid å tilbringe hjemme. "
+                "Her har du muligheten til å snakke med andre medelever og bli kjent med nye folk eller "
+                "fortelle det du har på hjertet! Under er det noen forslag om hva man kan snakke om.\n"
+            ),
+            color=0x00ff00
+        )
 
+        embed.set_thumbnail(url="https://www.northwestern.edu/counseling/outreach-education/lets-talk/assets/Lets-talk1.jpg")
+        embed.add_field(
+            name="**Deg selv!**",
+            value="Hva har du gått igjennom?",
+            inline=True
+        )
+        embed.add_field(
+            name="**Ting du er glad for/i**",
+            value="Hva liker du at du har i livet ditt?",
+            inline=True
+        )
+        embed.add_field(
+            name="**Hobby & Fritid**",
+            value="Hva driver du med hjemme 'a?",
+            inline=True
+        )
+        embed.add_field(
+            name="**Hva synes du om skolen?**",
+            value="Trives du? Hva mener du kunne vært bedre?",
+            inline=True
+        )
+        embed.set_footer(
+            text="Trykk på checkmarken under for å bli med!",
+            icon_url="https://i.pinimg.com/originals/a6/5c/4a/a65c4ae1e6a70af74a70ec2fe946e2e8.png"
+        )
         msg = await ctx.send(embed=embed)
         await msg.add_reaction('✅')
 
-        check = lambda m: m.id == msg.id and not (m.author.id in self.users)
-
+        check = lambda r, u: r.message.id == msg.id and not (u.id in self.users)
         while len(self.users) < 16 and not self.running:
-            reaction, user = self.bot.wait_for('reaction_add', check=check, timeout=300)
+            reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=300)
 
 
 
