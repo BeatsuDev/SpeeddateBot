@@ -40,8 +40,8 @@ class Configuration(commands.Cog):
     async def duration(self, ctx, duration=None):
         if not duration:
             results = [r for r in self.bot.db['configs'].find(guild_id=ctx.guild.id)]
-            duration = results[-1]['duration'] if len(results) > 0 else os.environ.get('duration', 300)
-            await ctx.send(f'The duration of the speed date is `{p[-1]}`')
+            duration = results['duration'] if len(results) > 0 else os.environ.get('duration', 300)
+            await ctx.send(f'The duration of the speed date is `{duration}`')
             return
         prevresult = self.bot.db['configs'].find( guild_id=ctx.guild.id )
         try:
