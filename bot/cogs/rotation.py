@@ -1,3 +1,4 @@
+import asyncio
 import discord
 from discord.ext import commands
 from stuf import stuf
@@ -58,9 +59,12 @@ class Rotation(commands.Cog):
         self.bot = bot
         self.running = False
         self.users = []
+        self.waiting_line = []
 
+    @commands.is_owner()
     @commands.command()
     async def signup(self, ctx):
+        self.users = []
         embed=discord.Embed(
             title="Bli med i Kattas speed date!",
             description=(
@@ -101,8 +105,45 @@ class Rotation(commands.Cog):
 
         check = lambda r, u: r.message.id == msg.id and not (u.id in self.users)
         while len(self.users) < 16 and not self.running:
-            reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=300)
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=300)
+                if not self.running:
+                    self.users.append(user.id)
+            except asyncio.TimeoutError:
+                await ctx.send(f'Timed out at signup reaction add | Start with {len(self.users)} members or re-sign up!')
+                return
 
+
+    @commands.is_owner()
+    @commands.command()
+    async def start(self, ctx):
+        self.running = True
+        await ctx.message.add_reaction('👌')
+
+        self.users = self.users if self.users%2==0 else self.waiting_line.append(self.users.pop())
+
+
+        for _ in range(2):
+            # How many times to rotate; meaning 2 rotations = 3 conversations
+            # Get talk duration from DB
+            result = bot.db['configs'].find(guild_id=message.guild.id)
+            results = [r for r in result]
+            duration = results[0]['duration'] if len( results ) > 0 else os.environ.get('duration', 300)
+            await asyncio.sleep(duration)
+
+            # Rotate users
+            
+
+        self.users = []
+        self.waiting_line = []
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if after == None and self.running:
+            self.users.remove(member.id)
+            if len(self.waiting_line) > 0:
+                newmember = member.guild.get_user(self.waiting_line[0])
+                await newmember.move_to(before)
 
 
 def setup(bot):
