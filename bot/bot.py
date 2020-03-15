@@ -11,11 +11,11 @@ class SpeedDater(commands.Bot):
         self.db = db or dataset.connect('sqlite:///speeddate.db')
 
 
-    async def get_prefix(self, bot, message):
+    async def get_prefix(bot, message):
         if not isinstance(message.channel, discord.abc.GuildChannel):
             return commands.when_mentioned_or(os.environ.get('prefix', '!'))
 
-        result = self.db['configs'].find(guild_id=message.guild.id)
+        result = bot.db['configs'].find(guild_id=message.guild.id)
         prefix = result.next()['prefix'] if len( [r for r in result] ) > 0 else os.environ.get('prefix', '!')
 
         return commands.when_mentioned_or(prefix)(bot, message)
