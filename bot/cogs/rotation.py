@@ -1,7 +1,6 @@
 import asyncio, os
 import discord
 from discord.ext import commands
-from stuf import stuf
 
 # roleid: (Text, Voice)
 defaultvoice = 688544744309260295
