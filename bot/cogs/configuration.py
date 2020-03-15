@@ -7,7 +7,12 @@ class Configuration(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def prefix(self, ctx, prefix):
+    async def prefix(self, ctx, prefix=None):
+        if not prefix:
+            p = await self.bot.get_prefix(ctx.message)
+            await ctx.send(f'The guild prefix is `{p[-1]}`')
+            return
+
         prevresult = self.bot.db['configs'].find( guild_id=ctx.guild.id )
         try:
             # Exhaust the generator, then get the first index
