@@ -134,9 +134,9 @@ class Rotation(commands.Cog):
             room = discord.utils.get(ctx.guild.voice_channels, id=rooms[i//2]['voice_channel'])
             role = discord.utils.get(ctx.guild.roles, id=rooms[i//2]['role_id'])
 
-            textchannels.append(text)
-            voicechannels.append(room)
-            self.roles.append(role)
+            if text not in textchannels: textchannels.append(text) 
+            if room not in voicechannels: voicechannels.append(room)
+            if role not in self.roles: self.roles.append(role)
 
             await member.move_to(room)
             await member.add_roles(role)
@@ -226,14 +226,15 @@ class Rotation(commands.Cog):
                                     await m.remove_roles(r)
                             await m.move_to(vc)
                             await m.add_roles(self.roles[voicechannels.index(vc)])
+                            moved.append(m.id)
                             break
 
 
         # Remove room roles
         for u in self.users:
+            user = self.bot.get_user(u)
             for r in self.roles:
-                if r in u:
-                    user = self.bot.get_user(u)
+                if r in user:
                     await user.remove_roles(discord.utils.get(ctx.guild.roles, id=r))
                     await user.move_to(None)
 
