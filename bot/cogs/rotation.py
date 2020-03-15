@@ -1,4 +1,4 @@
-import asyncio
+import asyncio, os
 import discord
 from discord.ext import commands
 from stuf import stuf
@@ -104,7 +104,7 @@ class Rotation(commands.Cog):
         msg = await ctx.send(embed=embed)
         await msg.add_reaction('✅')
 
-        check = lambda r, u: r.message.id == msg.id and not (u.id in self.users)
+        check = lambda r, u: r.message.id == msg.id and not (u.id in self.users) and not u.bot
         while len(self.users) < 16 and not self.running:
             try:
                 reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=300)
@@ -121,34 +121,36 @@ class Rotation(commands.Cog):
         self.running = True
         await ctx.message.add_reaction('👌')
 
-        self.users = self.users if self.users%2==0 else self.waiting_line.append(self.users.pop())
+        if not len(self.users)%2==0:
+            self.waiting_line.append(self.users.pop())
 
         textchannels = []
         voicechannels = []
-        roles = []
+        self.roles = []
 
         for i in range(len(self.users)):
             member = discord.utils.get(ctx.guild.members, id=self.users[i])
 
-            text = discord.utils.get(ctx.guild.channels, id=rooms[i//2].text_channel)
-            room = discord.utils.get(ctx.guild.voice_channels, id=rooms[i//2].voice_channel)
-            role = discord.utils.get(ctx.guild.roles, id=rooms[i//2].role_id)
+            text = discord.utils.get(ctx.guild.channels, id=rooms[i//2]['text_channel'])
+            room = discord.utils.get(ctx.guild.voice_channels, id=rooms[i//2]['voice_channel'])
+            role = discord.utils.get(ctx.guild.roles, id=rooms[i//2]['role_id'])
 
             textchannels.append(text)
             voicechannels.append(room)
-            roles.append(role)
+            self.roles.append(role)
 
             await member.move_to(room)
             await member.add_roles(role)
 
 
 
-        for _ in range(2):
+        for _ in range(len(voicechannels) if len(voicechannels) < 3 else 3):
             # How many times to rotate; meaning 2 rotations = 3 conversations
             # Get talk duration from DB
-            result = bot.db['configs'].find(guild_id=message.guild.id)
+            result = self.bot.db['configs'].find(guild_id=ctx.guild.id)
             results = [r for r in result]
             duration = results[0]['duration'] if len( results ) > 0 else os.environ.get('duration', 300)
+            duration = int(duration)
 
             # Tell first member it's "their" turn
             for vc in voicechannels:
@@ -161,17 +163,17 @@ class Rotation(commands.Cog):
                         self.users.append(u)
                         newmember = discord.utils.get(ctx.guild.members, id=u)
                         await newmember.move_to(vc)
-                        await newmember.add_roles(discord.utils.get(ctx.guild.roles, id=roles[voicechannels.index(vc)]))
-                        textchannels[voicechannels.index(vc)].send(f'<@{vc.members[0].id}> kan starte med ordet! Så bytter vi midtveis')
+                        await newmember.add_roles(discord.utils.get(ctx.guild.roles, id=self.roles[voicechannels.index(vc)]))
+                        await textchannels[voicechannels.index(vc)].send(f'<@{vc.members[0].id}> kan starte med ordet! Så bytter vi midtveis')
                     else:
                         self.users.remove(vc.members[0].id)
                         self.waiting_line.append(vc.members[0].id)
                         dv = discord.utils.get(ctx.guild.voice_channels, id=defaultvoice)
-                        vc.members[0].move_to(dv)
-                        vc.members[0].send('Du har blitt satt på venteliste')
+                        await vc.members[0].move_to(dv)
+                        await vc.members[0].send('Du har blitt satt på venteliste')
 
                 elif len(vc.members) >= 2:
-                    textchannels[voicechannels.index(vc)].send(f'<@{vc.members[0].id}> kan starte med ordet! Så bytter vi midtveis')
+                    await textchannels[voicechannels.index(vc)].send(f'<@{vc.members[0].id}> kan starte med ordet! Så bytter vi midtveis')
 
             await asyncio.sleep(duration/2)
 
@@ -185,17 +187,17 @@ class Rotation(commands.Cog):
                         self.users.append(u)
                         newmember = discord.utils.get(ctx.guild.members, id=u)
                         await newmember.move_to(vc)
-                        await newmember.add_roles(discord.utils.get(ctx.guild.roles, id=roles[voicechannels.index(vc)]))
-                        textchannels[voicechannels.index(vc)].send(f'Dere har bare halve tiden fordi forrige person dro! Øverste i VC kan starte, så bytter dere selv!')
+                        await newmember.add_roles(discord.utils.get(ctx.guild.roles, id=self.roles[voicechannels.index(vc)]))
+                        await textchannels[voicechannels.index(vc)].send(f'Dere har bare halve tiden fordi forrige person dro! Øverste i VC kan starte, så bytter dere selv!')
                     else:
                         self.users.remove(vc.members[0].id)
                         self.waiting_line.append(vc.members[0].id)
                         dv = discord.utils.get(ctx.guild.voice_channels, id=defaultvoice)
-                        vc.members[0].move_to(dv)
-                        vc.members[0].send('Du har blitt satt på venteliste')
+                        await vc.members[0].move_to(dv)
+                        await vc.members[0].send('Du har blitt satt på venteliste')
 
                 elif len(vc.members) >= 2:
-                    textchannels[voicechannels.index(vc)].send(f'<@{vc.members[0].id}> <@{vc.members[1].id}> byttetid!')
+                    await textchannels[voicechannels.index(vc)].send(f'<@{vc.members[0].id}> <@{vc.members[1].id}> byttetid!')
 
 
             await asyncio.sleep(duration/2)
@@ -216,17 +218,17 @@ class Rotation(commands.Cog):
                     # Take the user from the previous voice channel and move them in here
                     for m in voicechannels[i-1].members:
                         if not m.id in moved:
-                            for r in roles:
+                            for r in self.roles:
                                 if r in m.roles:
                                     await m.remove_roles(r)
                             await m.move_to(vc)
-                            await m.add_roles(roles[voicechannels.index(vc)])
+                            await m.add_roles(self.roles[voicechannels.index(vc)])
                             break
 
 
         # Remove room roles
         for u in self.users:
-            for r in roles:
+            for r in self.roles:
                 if r in u.roles:
                     await u.remove_roles(r)
 
@@ -235,11 +237,12 @@ class Rotation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        if not after and self.running:
+        print(after)
+        if not after.channel and self.running:
             self.users.remove(member.id)
 
             # Remove the room roles when they leave
-            for r in roles:
+            for r in self.roles:
                 if r in member.roles:
                     await member.remove_roles(r)
 
