@@ -37,7 +37,12 @@ class Configuration(commands.Cog):
         await ctx.send(f'Guild prefix set to {prefix}')
 
     @commands.command()
-    async def duration(self, ctx, duration):
+    async def duration(self, ctx, duration=None):
+        if not duration:
+            results = [r for r in self.bot.db.find(guild_id=ctx.guild.id)]
+            duration = results[-1]['duration'] if len(results) > 0 else os.environ.get('duration', 300)
+            await ctx.send(f'The duration of the speed date is `{p[-1]}`')
+            return
         prevresult = self.bot.db['configs'].find( guild_id=ctx.guild.id )
         try:
             # Exhaust the generator, then get the first index
@@ -59,7 +64,7 @@ class Configuration(commands.Cog):
             data['duration'] = duration
 
         self.bot.db['configs'].upsert(data, ['guild_id'])
-        await ctx.send(f'Guild prefix set to {prefix}')
+        await ctx.send(f'Guild duration set to {duration}')
 
     @commands.command()
     async def delay(self, ctx, delay):
