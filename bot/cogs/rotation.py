@@ -234,21 +234,24 @@ class Rotation(commands.Cog):
 
         self.users = []
         self.waiting_line = []
+        self.running = False
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        print(after)
-        if not after.channel and self.running:
+        if not after.channel and self.running and member.id in self.users:
             self.users.remove(member.id)
 
             # Remove the room roles when they leave
+            oldr = None
             for r in self.roles:
                 if r in member.roles:
+                    oldr = r
                     await member.remove_roles(r)
 
             if len(self.waiting_line) > 0:
-                newmember = member.guild.get_user(self.waiting_line[0])
-                await newmember.move_to(before)
+                newmember = discord.utils.get(member.guild.members, id=self.waiting_line[0])
+                await newmember.move_to(before.channel)
+                await newmember.add_roles(oldr)
 
 
 def setup(bot):
