@@ -206,8 +206,8 @@ class Rotation(commands.Cog):
             await asyncio.sleep(10)
 
             for t in textchannels:
-                async for msg in t.history(limit=500):
-                    await msg.delete()
+                messages = await t.history(limit=500).flatten()
+                await t.delete_messages(messages)
 
             # Rotate users
             moved = []
