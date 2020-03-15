@@ -232,8 +232,11 @@ class Rotation(commands.Cog):
         # Remove room roles
         for u in self.users:
             for r in self.roles:
-                if r in u.roles:
-                    await u.remove_roles(r)
+                if r in u:
+                    user = self.bot.get_user(u)
+                    await user.remove_roles(discord.utils.get(ctx.guild.roles, id=r))
+                    await user.move_to(None)
+
 
         self.users = []
         self.waiting_line = []
