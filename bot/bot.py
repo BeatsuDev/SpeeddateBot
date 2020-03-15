@@ -16,7 +16,8 @@ class SpeedDater(commands.Bot):
             return commands.when_mentioned_or(os.environ.get('prefix', '!'))
 
         result = bot.db['configs'].find(guild_id=message.guild.id)
-        prefix = result.next()['prefix'] if len( [r for r in result] ) > 0 else os.environ.get('prefix', '!')
+        results = [r for r in result]
+        prefix = results[0]['prefix'] if len( results ) > 0 else os.environ.get('prefix', '!')
 
         return commands.when_mentioned_or(prefix)(bot, message)
 

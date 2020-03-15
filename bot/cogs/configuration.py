@@ -6,7 +6,7 @@ class Configuration(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command
+    @commands.command()
     async def prefix(self, ctx, prefix):
         prevresult = self.bot.db['configs'].find( guild_id=ctx.guild.id )
         try:
@@ -30,7 +30,7 @@ class Configuration(commands.Cog):
         self.bot.db['configs'].upsert(data, ['guild_id'])
         await ctx.send(f'Guild prefix set to {prefix}')
 
-    @commands.command
+    @commands.command()
     async def delay(self, ctx, delay):
         prevresult = self.bot.db['configs'].find( guild_id=ctx.guild.id )
         try:
