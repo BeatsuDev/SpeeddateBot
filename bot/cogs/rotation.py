@@ -134,16 +134,14 @@ class Rotation(commands.Cog):
             room = discord.utils.get(ctx.guild.voice_channels, id=rooms[i//2]['voice_channel'])
             role = discord.utils.get(ctx.guild.roles, id=rooms[i//2]['role_id'])
 
-            if text not in textchannels: textchannels.append(text) 
+            if text not in textchannels: textchannels.append(text)
             if room not in voicechannels: voicechannels.append(room)
             if role not in self.roles: self.roles.append(role)
 
             await member.move_to(room)
             await member.add_roles(role)
 
-
-
-        for _ in range(len(voicechannels) if len(voicechannels) < 3 else 3):
+        for _ in range(len(voicechannels)-1 if len(voicechannels) < 3 else 3):
             # How many times to rotate; meaning 2 rotations = 3 conversations
             # Get talk duration from DB
             result = self.bot.db['configs'].find(guild_id=ctx.guild.id)
@@ -201,9 +199,11 @@ class Rotation(commands.Cog):
 
             await asyncio.sleep(duration/2)
 
+            '''
             for t in textchannels:
                 await t.send('10 sekunder igjen!')
             await asyncio.sleep(10)
+            '''
 
             for t in textchannels:
                 messages = await t.history(limit=500).flatten()
@@ -230,18 +230,24 @@ class Rotation(commands.Cog):
                             break
 
 
+        print("Removing roles")
         # Remove room roles
+        print(self.users)
         for u in self.users:
-            user = self.bot.get_user(u)
+            member = discord.utils.get(ctx.guild.members, id=u)
+            print(self.roles)
+            print(member.roles)
             for r in self.roles:
-                if r in user:
-                    await user.remove_roles(discord.utils.get(ctx.guild.roles, id=r))
-                    await user.move_to(None)
+                if r in member.roles:
+                    print("Moving members")
+                    await member.remove_roles(r)
+                    await member.move_to(None)
 
 
         self.users = []
         self.waiting_line = []
         self.running = False
+        print("We're done!")
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
