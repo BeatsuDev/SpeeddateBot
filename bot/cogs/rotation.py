@@ -4,55 +4,56 @@ from discord.ext import commands
 from stuf import stuf
 
 # roleid: (Text, Voice)
-rooms = stuf({
-    'rom1': {
+defaultvoice = 688544744309260295
+rooms = [
+    {
         'role_id': 688543432716845128,
         'text_channel': 688542752140820536,
         'voice_channel': 688542950166233121
     },
-    'rom2': {
+    {
         'role_id': 688543435539349602,
         'text_channel': 688542768091365397,
         'voice_channel': 688543249836539906
 
     },
-    'rom3': {
+    {
         'role_id': 688543439918465257,
         'text_channel': 688542792213200912,
         'voice_channel': 688543285182070805
 
     },
-    'rom4': {
+    {
         'role_id': 688543440656793642,
         'text_channel': 688542809694666836,
         'voice_channel': 688543309945110530
 
     },
-    'rom5': {
+    {
         'role_id': 688543442699288597,
         'text_channel': 688542824152563804,
         'voice_channel': 688543332695015458
 
     },
-    'rom6': {
+    {
         'role_id': 688543443307462905,
         'text_channel': 688542838795141150,
         'voice_channel': 688545447400571032
 
     },
-    'rom7': {
+    {
         'role_id': 688543444771143798,
         'text_channel': 688542897489969184,
         'voice_channel': 688543360276758555
 
     },
-    'rom8': {
+    {
         'role_id': 688543445773844483,
         'text_channel': 688542911197085760,
         'voice_channel': 688543387959164960
 
     }
-})
+]
 
 class Rotation(commands.Cog):
     def __init__(self, bot):
@@ -122,6 +123,25 @@ class Rotation(commands.Cog):
 
         self.users = self.users if self.users%2==0 else self.waiting_line.append(self.users.pop())
 
+        textchannels = []
+        voicechannels = []
+        roles = []
+
+        for i in range(len(self.users)):
+            member = discord.utils.get(ctx.guild.members, id=self.users[i])
+
+            text = discord.utils.get(ctx.guild.channels, id=rooms[i//2].text_channel)
+            room = discord.utils.get(ctx.guild.voice_channels, id=rooms[i//2].voice_channel)
+            role = discord.utils.get(ctx.guild.roles, id=rooms[i//2].role_id)
+
+            textchannels.append(text)
+            voicechannels.append(room)
+            roles.append(role)
+
+            await member.move_to(room)
+            await member.add_roles(role)
+
+
 
         for _ in range(2):
             # How many times to rotate; meaning 2 rotations = 3 conversations
@@ -129,18 +149,77 @@ class Rotation(commands.Cog):
             result = bot.db['configs'].find(guild_id=message.guild.id)
             results = [r for r in result]
             duration = results[0]['duration'] if len( results ) > 0 else os.environ.get('duration', 300)
-            await asyncio.sleep(duration)
+
+            # Tell first member it's "their" turn
+            for vc in voicechannels:
+                if len(vc.members) == 0:
+                    pass
+
+                elif len(vc.members) == 1:
+                    if len(self.waiting_line) > 0:
+                        u = self.waiting_line.pop(0)
+                        self.users.append(u)
+                        newmember = discord.utils.get(ctx.guild.members, id=u)
+                        await newmember.move_to(vc)
+                        await newmember.add_roles(discord.utils.get(ctx.guild.roles, id=roles[voicechannels.index(vc)]))
+                        textchannels[voicechannels.index(vc)].send(f'<@{vc.members[0].id}> kan starte med ordet! Så bytter vi midtveis')
+                    else:
+                        self.users.remove(vc.members[0].id)
+                        self.waiting_line.append(vc.members[0].id)
+                        dv = discord.utils.get(ctx.guild.voice_channels, id=defaultvoice)
+                        vc.members[0].move_to(dv)
+                        vc.members[0].send('Du har blitt satt på venteliste')
+
+                elif len(vc.members) >= 2:
+                    textchannels[voicechannels.index(vc)].send(f'<@{vc.members[0].id}> kan starte med ordet! Så bytter vi midtveis')
+
+            await asyncio.sleep(duration/2)
+
+            for vc in voicechannels:
+                if len(vc.members) == 0:
+                    pass
+
+                elif len(vc.members) == 1:
+                    if len(self.waiting_line) > 0:
+                        u = self.waiting_line.pop(0)
+                        self.users.append(u)
+                        newmember = discord.utils.get(ctx.guild.members, id=u)
+                        await newmember.move_to(vc)
+                        await newmember.add_roles(discord.utils.get(ctx.guild.roles, id=roles[voicechannels.index(vc)]))
+                        textchannels[voicechannels.index(vc)].send(f'Dere har bare halve tiden fordi forrige person dro! Øverste i VC kan starte, så bytter dere selv!')
+                    else:
+                        self.users.remove(vc.members[0].id)
+                        self.waiting_line.append(vc.members[0].id)
+                        dv = discord.utils.get(ctx.guild.voice_channels, id=defaultvoice)
+                        vc.members[0].move_to(dv)
+                        vc.members[0].send('Du har blitt satt på venteliste')
+
+                elif len(vc.members) >= 2:
+                    textchannels[voicechannels.index(vc)].send(f'<@{vc.members[0].id}> <@{vc.members[1].id}> byttetid!')
+
+
+            await asyncio.sleep(duration/2)
 
             # Rotate users
-            
+
+        # Remove room roles
+        for u in self.users:
+            for r in roles:
+                if r.role
 
         self.users = []
         self.waiting_line = []
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        if after == None and self.running:
+        if not after and self.running:
             self.users.remove(member.id)
+
+            # Remove the room roles when they leave
+            for r in roles:
+                if r in member.roles:
+                    await member.remove_roles(r)
+
             if len(self.waiting_line) > 0:
                 newmember = member.guild.get_user(self.waiting_line[0])
                 await newmember.move_to(before)
