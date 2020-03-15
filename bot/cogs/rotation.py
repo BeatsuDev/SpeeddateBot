@@ -202,8 +202,12 @@ class Rotation(commands.Cog):
             await asyncio.sleep(duration/2)
 
             for t in textchannels:
-                await t.send('20 sekunder igjen!')
-            await asyncio.sleep(20)
+                await t.send('10 sekunder igjen!')
+            await asyncio.sleep(10)
+
+            for t in textchannels:
+                async for msg in t.history(limit=500):
+                    await msg.delete()
 
             # Rotate users
             moved = []
