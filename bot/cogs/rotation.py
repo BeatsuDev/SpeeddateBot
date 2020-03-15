@@ -200,12 +200,35 @@ class Rotation(commands.Cog):
 
             await asyncio.sleep(duration/2)
 
+            for t in textchannels:
+                await t.send('20 sekunder igjen!')
+            await asyncio.sleep(20)
+
             # Rotate users
+            moved = []
+            for i in range(len(voicechannels)):
+                vc = voicechannels[i]
+
+                if len(voicechannels[i-1].members) == 0:
+                    pass
+
+                elif len(voicechannels[i-1].members) >= 1:
+                    # Take the user from the previous voice channel and move them in here
+                    for m in voicechannels[i-1].members:
+                        if not m.id in moved:
+                            for r in roles:
+                                if r in m.roles:
+                                    await m.remove_roles(r)
+                            await m.move_to(vc)
+                            await m.add_roles(roles[voicechannels.index(vc)])
+                            break
+
 
         # Remove room roles
         for u in self.users:
             for r in roles:
-                if r.role
+                if r in u.roles:
+                    await u.remove_roles(r)
 
         self.users = []
         self.waiting_line = []
