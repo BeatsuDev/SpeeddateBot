@@ -138,7 +138,11 @@ class Rotation(commands.Cog):
             if room not in voicechannels: voicechannels.append(room)
             if role not in self.roles: self.roles.append(role)
 
-            await member.move_to(room)
+            try:
+                await member.move_to(room)
+            except discord.errors.HTTPException:
+                self.users.remove(member.id)
+                await member.send('Du ble fjernet fra køen fordi ikke var inni en voice kanal')
             await member.add_roles(role)
 
         for _ in range(len(voicechannels)-1 if len(voicechannels) < 3 else 3):
@@ -241,7 +245,7 @@ class Rotation(commands.Cog):
                 if r in member.roles:
                     print("Moving members")
                     await member.remove_roles(r)
-                    await member.move_to(None)
+                    await member.move_to(discord.utils.get(ctx.guild.voice_channels, id=defaultvoice))
 
 
         self.users = []
