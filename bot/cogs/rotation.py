@@ -129,6 +129,9 @@ class Rotation(commands.Cog):
 
         for i in range(len(self.users)):
             member = discord.utils.get(ctx.guild.members, id=self.users[i])
+            if not member.voice:
+                await member.send('Du ble fjernet fra speeddaten fordi ikke var inni en voice kanal')
+                continue
 
             text = discord.utils.get(ctx.guild.channels, id=rooms[i//2]['text_channel'])
             room = discord.utils.get(ctx.guild.voice_channels, id=rooms[i//2]['voice_channel'])
@@ -138,11 +141,8 @@ class Rotation(commands.Cog):
             if room not in voicechannels: voicechannels.append(room)
             if role not in self.roles: self.roles.append(role)
 
-            try:
-                await member.move_to(room)
-            except discord.errors.HTTPException:
-                self.users.remove(member.id)
-                await member.send('Du ble fjernet fra køen fordi ikke var inni en voice kanal')
+            await member.move_to(room)
+            self.users.remove(member.id)
             await member.add_roles(role)
 
         for _ in range(len(voicechannels)-1 if len(voicechannels) < 3 else 3):
@@ -169,8 +169,8 @@ class Rotation(commands.Cog):
                     else:
                         self.users.remove(vc.members[0].id)
                         self.waiting_line.append(vc.members[0].id)
-                        dv = discord.utils.get(ctx.guild.voice_channels, id=defaultvoice)
-                        await vc.members[0].move_to(dv)
+                        dv = discord.utils.get(ctx.guild.voice_channels, id=defaultvoice
+                        await vc.members[0].move_to(dv
                         await vc.members[0].send('Du har blitt satt på venteliste')
 
                 elif len(vc.members) >= 2:
