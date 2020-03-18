@@ -77,23 +77,23 @@ class Rotation(commands.Cog):
 
         embed.set_thumbnail(url="https://www.northwestern.edu/counseling/outreach-education/lets-talk/assets/Lets-talk1.jpg")
         embed.add_field(
-            name="**Deg selv!**",
-            value="Hva har du gått igjennom?",
+            name="**Hobby & Fritid**",
+            value="Hva driver du med hjemme 'a? Kanskje noen felles interesser? o.o",
             inline=True
         )
         embed.add_field(
             name="**Ting du er glad for/i**",
-            value="Hva liker du at du har i livet ditt?",
+            value="Hva liker du at du har i livet ditt? Hva setter du pris på :D",
             inline=True
         )
         embed.add_field(
-            name="**Hobby & Fritid**",
-            value="Hva driver du med hjemme 'a?",
+            name="**Deg selv!**",
+            value="Hvilket trinn går du i? Who are you! Hva holder deg våken på kveldene?",
             inline=True
         )
         embed.add_field(
             name="**Hva synes du om skolen?**",
-            value="Trives du? Hva mener du kunne vært bedre?",
+            value="Trives du? Hva mener du kunne vært bedre? Hva liker du med skolen :)",
             inline=True
         )
         embed.set_footer(
