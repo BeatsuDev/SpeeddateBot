@@ -110,7 +110,8 @@ class Rotation(commands.Cog):
                 if not self.running:
                     self.users.append(user.id)
             except asyncio.TimeoutError:
-                await ctx.send(f'Timed out at signup reaction add | Start with {len(self.users)} members or re-sign up!')
+                if not self.running:
+                    await ctx.send(f'Timed out at signup reaction add | Start with {len(self.users)} members or re-sign up!')
                 return
 
 
